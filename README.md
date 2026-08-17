@@ -99,8 +99,8 @@ src/
 
 ```bash
 # Clone the repository
-git clone <repository-url>
-cd asatech
+git clone https://github.com/arabbyy/ASATECH
+cd ASATECH
 
 # Install dependencies
 npm install
