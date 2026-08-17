@@ -1,50 +1,54 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Check, AlertTriangle } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { TextField, PasswordInput } from "@/components/ui/Field";
-import { useAuth } from "@/state/AuthContext";
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Check, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { TextField, PasswordInput } from '@/components/ui/Field';
+import { useAuth } from '@/state/AuthContext';
 
 const PASSWORD_RULES = [
-  { test: (p) => p.length >= 8, label: "At least 8 characters" },
-  { test: (p) => /[A-Z]/.test(p), label: "One uppercase letter" },
-  { test: (p) => /[0-9]/.test(p), label: "One number" },
+  { test: (p) => p.length >= 8, label: 'At least 8 characters' },
+  { test: (p) => /[A-Z]/.test(p), label: 'One uppercase letter' },
+  { test: (p) => /[0-9]/.test(p), label: 'One number' },
 ];
 
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [errors, setErrors] = useState({});
-  const [formError, setFormError] = useState("");
+  const [formError, setFormError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const validate = () => {
     const e = {};
-    if (!name.trim()) e.name = "Full name is required.";
-    if (!email.trim()) e.email = "Email is required.";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = "Enter a valid email address.";
-    if (password.length < 8) e.password = "Password must be at least 8 characters.";
-    if (confirm !== password) e.confirm = "Passwords do not match.";
+    if (!name.trim()) e.name = 'Full name is required.';
+    if (!email.trim()) e.email = 'Email is required.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      e.email = 'Enter a valid email address.';
+    if (password.length < 8)
+      e.password = 'Password must be at least 8 characters.';
+    if (confirm !== password) e.confirm = 'Passwords do not match.';
     return e;
   };
 
   const handleSubmit = async (ev) => {
     ev.preventDefault();
-    setFormError("");
+    setFormError('');
     const e = validate();
     setErrors(e);
     if (Object.keys(e).length) return;
     setLoading(true);
     try {
       await register({ name, email, password });
-      navigate("/account", { replace: true });
+      navigate('/account', { replace: true });
     } catch (err) {
-      setFormError(err.message || "Unable to create account. Please try again.");
+      setFormError(
+        err.message || 'Unable to create account. Please try again.',
+      );
     } finally {
       setLoading(false);
     }
@@ -52,8 +56,12 @@ export default function Register() {
 
   return (
     <div className="animate-slide-up">
-      <h1 className="text-2xl font-bold tracking-tight text-ink">Create your account</h1>
-      <p className="mt-1 text-sm text-muted">Start shopping with a secure ASATECH account.</p>
+      <h1 className="text-2xl font-bold tracking-tight text-ink">
+        Create your account
+      </h1>
+      <p className="mt-1 text-sm text-muted">
+        Start shopping with a secure ASATECH account.
+      </p>
 
       <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-4">
         {formError && (
@@ -62,23 +70,27 @@ export default function Register() {
             {formError}
           </div>
         )}
-        <TextField
-          label="Full name"
-          autoComplete="name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          error={errors.name}
-          required
-        />
-        <TextField
-          label="Email address"
-          type="email"
-          autoComplete="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          error={errors.email}
-          required
-        />
+        <div className="mt-5">
+          <TextField
+            label="Full name"
+            autoComplete="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            error={errors.name}
+            required
+          />
+        </div>
+        <div className="mt-5">
+          <TextField
+            label="Email address"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            error={errors.email}
+            required
+          />
+        </div>
         <PasswordInput
           label="Password"
           autoComplete="new-password"
@@ -92,7 +104,10 @@ export default function Register() {
             {PASSWORD_RULES.map((r) => {
               const ok = r.test(password);
               return (
-                <li key={r.label} className={`flex items-center gap-1 text-xs ${ok ? "text-emerald-500" : "text-faint"}`}>
+                <li
+                  key={r.label}
+                  className={`flex items-center gap-1 text-xs ${ok ? 'text-emerald-500' : 'text-faint'}`}
+                >
                   <Check className="h-3 w-3" /> {r.label}
                 </li>
               );
@@ -113,8 +128,11 @@ export default function Register() {
       </form>
 
       <p className="mt-6 text-center text-sm text-muted">
-        Already have an account?{" "}
-        <Link to="/login" className="font-semibold text-brand-500 hover:text-brand-600">
+        Already have an account?{' '}
+        <Link
+          to="/login"
+          className="font-semibold text-brand-500 hover:text-brand-600"
+        >
           Sign in
         </Link>
       </p>

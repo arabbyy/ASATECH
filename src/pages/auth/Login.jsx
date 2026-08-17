@@ -68,7 +68,7 @@ export default function Login() {
           error={errors.email}
           required
         />
-        <div>
+        <div className="mt-5">
           <PasswordInput
             label="Password"
             autoComplete="current-password"
