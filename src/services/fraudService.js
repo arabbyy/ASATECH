@@ -1,3 +1,4 @@
+
 /**
  * Fraud alert service.
  *
@@ -15,7 +16,8 @@ import { FRAUD_ALERTS, getFraudAlertById } from "../data/mock";
  */
 export async function listFraudAlerts(params = {}) {
   if (isApiConfigured()) {
-    return client.get("/fraud/alerts", params);
+    const res = await client.get("/fraud/alerts", params);
+    return Array.isArray(res) ? res : res?.data ?? [];
   }
   return FRAUD_ALERTS;
 }

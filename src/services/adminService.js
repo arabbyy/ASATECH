@@ -14,7 +14,8 @@ import { CUSTOMERS, AUDIT_LOGS, ANALYTICS, getCustomerById } from "../data/mock"
  */
 export async function listCustomers(params = {}) {
   if (isApiConfigured()) {
-    return client.get("/admin/customers", params);
+    const res = await client.get("/admin/customers", params);
+    return Array.isArray(res) ? res : res?.data ?? [];
   }
   return CUSTOMERS;
 }
@@ -38,7 +39,8 @@ export async function getCustomer(id) {
  */
 export async function listAuditLogs(params = {}) {
   if (isApiConfigured()) {
-    return client.get("/admin/audit-logs", params);
+    const res = await client.get("/admin/audit-logs", params);
+    return Array.isArray(res) ? res : res?.data ?? [];
   }
   return AUDIT_LOGS;
 }

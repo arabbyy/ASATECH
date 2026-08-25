@@ -1,3 +1,4 @@
+
 /**
  * Product catalogue service.
  *
@@ -15,7 +16,8 @@ import { PRODUCTS, getRelatedProducts, getFeaturedProducts } from "../data/produ
  */
 export async function listProducts(params = {}) {
   if (isApiConfigured()) {
-    return client.get("/products", params);
+    const res = await client.get("/products", params);
+    return Array.isArray(res) ? res : res?.data ?? [];
   }
   // Fallback to static data for development
   let list = PRODUCTS;
@@ -66,7 +68,8 @@ export async function getRelated(slugOrId, limit = 4) {
  */
 export async function getFeatured(limit = 8) {
   if (isApiConfigured()) {
-    return client.get("/products/featured");
+    const res = await client.get("/products/featured");
+    return Array.isArray(res) ? res : res?.data ?? [];
   }
   return getFeaturedProducts(limit);
 }
