@@ -1,222 +1,179 @@
-# ASATECH — Premium Gadget E-Commerce Platform
+# ASATECH E-Commerce Platform
 
-A production-grade, frontend-only e-commerce application for premium electronics and gadgets. Built with React, Vite, Tailwind CSS, and Material UI.
+ASATECH is a full-stack, production-ready e-commerce platform for premium gadgets (Nigeria). It combines a React storefront and admin console with a secure Express.js + MongoDB API, Paystack payment processing, and a rules-based fraud detection engine.
 
-## Features
+This monorepo contains everything needed to run the platform locally or deploy it to production.
 
-### Customer Experience
+## Repository Structure
 
-- **Storefront**: Modern homepage with hero, categories, featured products, and deals
-- **Product Catalog**: Search, filtering (category, price, availability), sorting, pagination
-- **Product Details**: Image gallery, specifications, related products, wishlist
-- **Shopping Cart**: Persistent cart with quantity controls and free shipping threshold
-- **Checkout**: Multi-step checkout (review → delivery → payment → confirmation)
-- **User Account**: Orders, transactions, profile, wishlist, payment methods, notifications, security settings
-
-### Admin Console
-
-- **Dashboard**: Revenue, transactions, risk metrics with SVG charts
-- **Product Management**: Create, edit, delete products with stock tracking
-- **Inventory**: Stock level monitoring and adjustment
-- **Order Management**: View orders, update status, track suspicious transactions
-- **Customer Management**: Customer directory with order history
-- **Transaction Monitoring**: Payment transaction list with risk scoring
-- **Fraud Alerts**: Investigation interface with risk factors and decision controls
-- **Audit Logs**: Administrative activity tracking
+```
+asatech/
+├── backend/            # Express.js + MongoDB REST API
+│   ├── src/            # Controllers, models, routes, services, middleware
+│   ├── scripts/        # Database seeding
+│   ├── docker-compose.yml  # MongoDB + API local stack
+│   ├── Dockerfile
+│   ├── .env.example
+│   └── README.md       # Backend-specific docs (endpoints, env vars)
+│
+├── frontend/           # React 19 + Vite 7 single-page application
+│   ├── src/            # Components, pages, layouts, services, state
+│   ├── index.html
+│   ├── vite.config.js / vite.config.ts
+│   ├── Dockerfile
+│   ├── .env.example
+│   └── README.md       # Frontend-specific docs (routing, env vars)
+│
+└── docs/               # Cross-cutting documentation
+    ├── API.md          # REST API reference
+    ├── ARCHITECTURE.md # Frontend architecture
+    ├── DEPLOYMENT.md   # Production deployment guides
+    ├── PAYMENT.md      # Paystack integration details
+    ├── SECURITY.md     # Security model
+    └── SECURITY_REVIEW.md
+```
 
 ## Technology Stack
 
-| Layer         | Technology                   |
-| ------------- | ---------------------------- |
-| Framework     | React 19                     |
-| Build Tool    | Vite 7                       |
-| Styling       | Tailwind CSS v4              |
-| UI Components | Material UI (MUI)            |
-| Icons         | Lucide React                 |
-| Routing       | React Router v6              |
-| State         | React Context + localStorage |
+| Layer      | Technology |
+|------------|------------|
+| Frontend   | React 19, Vite 7, Tailwind CSS v4, Material UI, React Router, Lucide |
+| Backend    | Node.js 20, Express.js 4, Mongoose 8 |
+| Database   | MongoDB 7 |
+| Auth       | JWT (7-day tokens), bcrypt (12 rounds) |
+| Payments   | Paystack (initialize → popup → webhook verification) |
+| Email      | Brevo API (transactional) |
+| Security   | Helmet, CORS, rate limiting, mongo-sanitize, hpp, CSP |
+| Logging    | Winston + Morgan |
+| API Docs   | Swagger UI / OpenAPI |
 
-## Project Structure
+## Features
 
-```
-src/
-├── components/          # Reusable UI components
-│   ├── ui/             # Design system primitives
-│   ├── Logo.jsx        # ASATECH brand mark
-│   ├── ProductCard.jsx # Product display card
-│   ├── Rating.jsx      # Star rating component
-│   ├── Timeline.jsx    # Order tracking timeline
-│   ├── charts.jsx      # SVG charts (line, bar, donut)
-│   └── ...
-├── layouts/            # Page layouts
-│   ├── StorefrontLayout.jsx
-│   ├── AuthLayout.jsx
-│   ├── CustomerLayout.jsx
-│   └── AdminLayout.jsx
-├── pages/              # Route pages
-│   ├── Home.jsx
-│   ├── Catalog.jsx
-│   ├── ProductDetails.jsx
-│   ├── Cart.jsx
-│   ├── Checkout.jsx
-│   ├── auth/           # Login, Register, Password reset
-│   ├── account/        # Customer dashboard pages
-│   └── admin/          # Admin console pages
-├── services/           # API service layer
-│   ├── config.js       # Environment configuration
-│   ├── client.js       # HTTP client
-│   ├── authService.js  # Authentication
-│   ├── paymentService.js # Paystack integration
-│   ├── catalogService.js # Products
-│   ├── orderService.js # Orders & transactions
-│   ├── fraudService.js # Fraud alerts
-│   └── adminService.js # Admin operations
-├── state/              # React Context providers
-│   ├── ThemeContext.jsx
-│   ├── AuthContext.jsx
-│   ├── CartContext.jsx
-│   └── ToastContext.jsx
-├── hooks/              # Custom React hooks
-│   └── useAsync.js
-├── lib/                # Utilities & constants
-│   ├── theme.js        # MUI theme builder
-│   ├── format.js       # Currency, date formatting
-│   └── constants.js    # Domain constants
-├── data/               # Mock data (development only)
-│   └── products.js
-└── utils/              # Helper functions
-    └── cn.js           # Class name merger
-```
+- **Storefront** — product catalogue with search/filter, product details, wishlist, and localStorage-persisted cart.
+- **Checkout** — multi-step flow (cart → delivery → payment) with Paystack inline popup. Payment verification is server-side only.
+- **Customer dashboard** — orders, transactions, profile & address book, wishlist, security settings.
+- **Admin console** — analytics, product & inventory management, order management, customers, fraud alerts & investigation, audit logs.
+- **Fraud detection** — rules-based risk scoring (high-value purchases, rapid repeat orders, new devices, failed logins, unusual hours) with Low/Medium/High risk levels.
+- **Security** — JWT auth, role-based access (customer/admin), input sanitization, rate limits, security headers, audit logging.
+- **Notifications** — transactional emails via Brevo.
+- **API documentation** — live Swagger UI.
 
-## Getting Started
+## Quick Start
 
 ### Prerequisites
 
-- Node.js 18+
-- npm or yarn
+- Node.js 20+
+- MongoDB 7 (local, Docker, or Atlas)
+- npm
 
-### Installation
+### 1. Backend
 
 ```bash
-# Clone the repository
-git clone https://github.com/arabbyy/ASATECH
-cd ASATECH
-
-# Install dependencies
+cd backend
 npm install
-
-# Copy environment example
-cp .env.example .env
-
-# Start development server
-npm run dev
+cp .env.example .env   # then edit with your credentials
+npm run seed           # creates admin user + sample catalogue
+npm run dev            # http://localhost:8080
 ```
 
-### Environment Variables
+Swagger docs: `http://localhost:8080/api/v1/docs` — Health check: `http://localhost:8080/health`
 
-Create a `.env` file based on `.env.example`:
+Key `.env` values:
+
+| Variable | Purpose |
+|----------|---------|
+| `MONGODB_URI` | MongoDB connection string |
+| `JWT_SECRET` | JWT signing secret |
+| `PAYSTACK_SECRET_KEY` / `PAYSTACK_PUBLIC_KEY` | Paystack credentials |
+| `PAYSTACK_WEBHOOK_SECRET` | Webhook signature verification |
+| `BREVO_API_KEY` / `BREVO_SENDER_EMAIL` / `BREVO_SENDER_NAME` | Transactional email |
+| `FRONTEND_URL` | Frontend origin allowed by CORS |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Seeded admin account |
+
+Alternatively, run the backend + MongoDB with Docker:
 
 ```bash
-# Backend API base URL (leave empty for offline/demo mode)
-VITE_API_BASE_URL=
-
-# Paystack public key (client-safe)
-VITE_PAYSTACK_PUBLIC_KEY=
+cd backend
+docker compose up --build
 ```
 
-### Build
+### 2. Frontend
 
 ```bash
-# Production build
-npm run build
-
-# Preview production build
-npm run preview
+cd frontend
+npm install
+cp .env.example .env   # set VITE_API_BASE_URL and VITE_PAYSTACK_PUBLIC_KEY
+npm run dev            # http://localhost:5173
 ```
 
-## Authentication Flow
+Frontend environment variables:
 
-1. Users can browse products without authentication
-2. Checkout requires authentication (protected route)
-3. Admin console requires admin role (protected route)
-4. Authentication state persists via localStorage
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `VITE_API_BASE_URL` | ✅ | Backend API base URL, e.g. `http://localhost:8080/api/v1` |
+| `VITE_PAYSTACK_PUBLIC_KEY` | ✅ for checkout | Paystack **public** key (`pk_test_…` / `pk_live_…`) |
+| `VITE_APP_MODE` | – | `development` / `staging` / `production` |
 
-## Payment Integration
+> ⚠️ The Paystack **secret** key never touches the frontend — it stays on the backend where webhook verification happens.
 
-The checkout flow integrates with Paystack via the backend:
+## Main API Endpoints
 
-```
-Frontend → POST /payments/initialize → Backend → Paystack API
-Frontend ← { reference, amount, ... } ← Backend ← Paystack
-Frontend → PaystackPop.setup() → User completes payment
-Backend verifies payment → Order confirmed
-```
+All routes are prefixed `/api/v1`. See `docs/API.md` and the backend README for the full reference.
 
-**Important**: Payment verification happens server-side only. The frontend never handles secret keys or performs verification.
+| Area | Endpoints |
+|------|-----------|
+| Auth | `POST /auth/register`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`, `POST /auth/password/reset-request`, `POST /auth/password/reset` |
+| Products | `GET /products`, `GET /products/:slug`, `GET /products/featured` |
+| Orders | `GET /orders`, `GET /orders/:ref` |
+| Payments | `POST /payments/initialize`, `POST /payments/webhook` |
+| Fraud (admin) | `GET /fraud/alerts`, `PATCH /fraud/alerts/:id` |
+| Admin | `GET /admin/customers`, `GET /admin/audit-logs`, `GET /admin/analytics`, `GET/POST/PATCH/DELETE /admin/products` |
 
-## Risk Scoring
+## Payment Flow
 
-Fraud risk levels are defined as:
+1. Checkout data is sent to `POST /payments/initialize`.
+2. The backend creates a pending order, calculates the authoritative total, and returns a Paystack reference.
+3. The frontend launches the Paystack inline popup.
+4. Paystack processes the payment and fires a webhook to `POST /payments/webhook`.
+5. The backend verifies the transaction with Paystack (server-side), marks the order paid, decrements stock, and sends a confirmation email.
 
-- **Low Risk**: 0–29
-- **Medium Risk**: 30–59
-- **High Risk**: 60–100
+Payment verification **never runs in the browser**.
 
-Risk scores are provided by the backend fraud engine. The frontend displays scores and factors but never computes them.
+## Fraud Detection
 
-## Design System
+A rules-based scoring system flags suspicious behaviour for admin review:
 
-### Color Palette
+| Rule | Points |
+|------|--------|
+| High-value purchase (> ₦500,000) | +30 |
+| Multiple purchases (5+ in 24h) | +25 |
+| New device (first login) | +20 |
+| Failed login attempts (3+) | +15 |
+| Unusual hours (2 AM – 5 AM) | +10 |
 
-- **Brand**: Electric blue (#3b82f6)
-- **Surface**: Deep navy (#070a12 dark, #f4f6fa light)
-- **Semantic**: Green (success), Amber (warning), Red (danger)
+Risk levels: **Low** (0–29), **Medium** (30–59), **High** (60–100).
 
-### Typography
+## Testing
 
-- **Font**: Inter (Google Fonts)
-- **Weights**: 400, 500, 600, 700, 800
+A manual checklist for the core flows lives in `frontend/README.md` (browse, cart, checkout, Paystack popup, admin console, themes, responsiveness). Backend has `npm run lint` and a seed script for reproducible data.
 
-### Dark Mode
+## Deployment
 
-- Default theme is dark
-- Light mode fully supported
-- User preference persisted to localStorage
+- **Frontend** — `npm run build` produces a static bundle in `frontend/dist/`, deployable to Vercel, Netlify, Cloudflare Pages, S3 + CloudFront, or any static host (with SPA rewrite to `index.html`).
+- **Backend** — deployable to Railway, Render, or any Node host; also ships a production Docker setup (`backend/docker-compose.yml` + `backend/Dockerfile`).
 
-## API Integration Points
+See `docs/DEPLOYMENT.md` for step-by-step instructions, environment-specific builds, and a post-deployment checklist.
 
-All API calls are isolated in the `services/` layer. Key integration points:
+## Documentation
 
-| Service          | Endpoint               | Method          | Description         |
-| ---------------- | ---------------------- | --------------- | ------------------- |
-| `authService`    | `/auth/login`          | POST            | User login          |
-| `authService`    | `/auth/register`       | POST            | User registration   |
-| `authService`    | `/auth/me`             | GET             | Current user        |
-| `catalogService` | `/products`            | GET             | List products       |
-| `catalogService` | `/products/:slug`      | GET             | Product details     |
-| `orderService`   | `/orders`              | GET             | List orders         |
-| `orderService`   | `/orders/:ref`         | GET             | Order details       |
-| `paymentService` | `/payments/initialize` | POST            | Initialize Paystack |
-| `fraudService`   | `/fraud/alerts`        | GET             | List fraud alerts   |
-| `adminService`   | `/admin/products`      | POST/PUT/DELETE | Product management  |
-
-See `docs/API.md` for detailed endpoint specifications.
-
-## Security Considerations
-
-- Paystack public key only (never expose secret key)
-- Payment verification server-side only
-- Frontend route guards are UX-only (backend enforces authorization)
-- No sensitive data in localStorage beyond auth token reference
-- CORS and CSRF handled by backend
-
-## Browser Support
-
-- Chrome (latest)
-- Firefox (latest)
-- Safari (latest)
-- Edge (latest)
+| Document | Contents |
+|----------|----------|
+| `docs/API.md` | Full REST API reference |
+| `docs/ARCHITECTURE.md` | Frontend architecture & design system |
+| `docs/DEPLOYMENT.md` | Production deployment for both apps |
+| `docs/PAYMENT.md` | Paystack integration deep-dive |
+| `docs/SECURITY.md` / `docs/SECURITY_REVIEW.md` | Security model and review |
 
 ## License
 
-Proprietary — ASATECH
+PROPRIETARY — ASATECH. This repository is not open-sourced; do not redistribute without permission.

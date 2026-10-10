@@ -1,0 +1,147 @@
+/**
+ * Payment service — Paystack integration boundary.
+ *
+ * This service handles the payment initialization flow:
+ * 1. Frontend sends checkout data to POST /payments/initialize
+ * 2. Backend initializes Paystack transaction and returns reference
+ * 3. Frontend launches Paystack popup with the reference
+ * 4. Backend verifies payment server-side (never in browser)
+ *
+ * IMPORTANT:
+ * - Only Paystack PUBLIC key is used in frontend
+ * - Payment verification happens server-side only
+ * - No payment success is mocked or assumed
+ */
+import { client } from "./client";
+import { config } from "./config";
+
+export const PAYMENT_ENDPOINT = "/payments/initialize";
+
+/**
+ * Initialize a payment transaction.
+ * 
+ * Sends checkout data to backend which initializes Paystack transaction.
+ * Backend returns reference and amount needed for Paystack popup.
+ * 
+ * @param {object} payload - { email, amount, currency, items, shipping }
+ * @returns {Promise<object>} - { reference, amount, currency, authorizationUrl, metadata }
+ */
+export async function initializePayment(payload) {
+  return client.post(PAYMENT_ENDPOINT, payload);
+}
+
+/**
+ * Resume an existing payment session for an unpaid/failed order.
+ * Returns the original Paystack reference so the popup maps to the
+ * same transaction record on successful completion.
+ *
+ * @param {string} orderId - The order's Mongo _id (or human ref).
+ * @returns {Promise<object>} - { paid, reference, amount, currency, email, publicKey, orderId, orderRef }
+ */
+export async function resumePayment(orderId) {
+  return client.post("/payments/resume", { orderId });
+}
+
+/**
+ * Verify a payment server-side against Paystack.
+ *
+ * The backend calls Paystack's verify endpoint and — if the payment succeeded —
+ * settles the transaction and marks the linked order as paid through the same
+ * idempotent path as the webhook. This is what clears the "paid but stuck on
+ * pending" state even when the webhook hasn't arrived.
+ *
+ * @param {string} reference - Paystack reference (or internal TXN reference)
+ * @returns {Promise<object>} - { transactionStatus, paymentStatus, orderId, orderRef, reference, amount, currency, paidAt }
+ */
+export async function verifyPayment(reference) {
+  return client.get(`/payments/verify/${encodeURIComponent(reference)}`);
+}
+
+/**
+ * Launch Paystack inline checkout popup.
+ * 
+ * Maps backend initialization response to Paystack SDK parameters.
+ * Handles both inline popup and redirect fallback.
+ * 
+ * @param {object} init - { key, email, amount, reference, currency, metadata }
+ * @param {object} handlers - { onSuccess, onClose, onError }
+ * @returns {object|null} Paystack handler or null
+ */
+export function launchPaystack(init, handlers = {}) {
+  const { key, email, amount, reference, currency = "NGN", metadata } = init;
+
+  const publicKey = key || config.paystackPublicKey;
+  if (!publicKey) {
+    handlers.onError?.(
+      new Error("Paystack public key not configured. Set VITE_PAYSTACK_PUBLIC_KEY.")
+    );
+    return null;
+  }
+
+  // Inline SDK path — kept for popup-style flows that opt in explicitly.
+  // NOTE: `handler.openIframe()` renders a full-page Paystack overlay over the
+  // host app. In sandboxed/blocked contexts that iframe can come up as a blank
+  // white screen, so checkout should prefer the hosted new-tab handoff instead.
+  if (mode === "inline" && typeof window !== "undefined" && window.PaystackPop) {
+    const handler = window.PaystackPop.setup({
+      key: publicKey,
+      email,
+      amount: Math.round(Number(amount) || 0), // Amount in kobo
+      currency,
+      ref: reference,
+      metadata,
+      callback: (response) => {
+        // Callback indicates payment completed — backend must verify
+        handlers.onSuccess?.(response);
+      },
+      onClose: () => handlers.onClose?.(),
+    });
+    handler.openIframe();
+    return handler;
+  }
+
+  // Hosted new-tab handoff (default) — the host page stays mounted behind the
+  // PaymentModal so it can never blank white while the modal shows progress
+  // (handoff → verifying → confirmed / failed).
+  const hostedUrl = init.authorizationUrl || (reference && `https://checkout.paystack.com/${reference}`);
+  if (mode === "tab" && hostedUrl) {
+    const win = window.open(hostedUrl, "_blank", "noopener,noreferrer");
+    if (win) win.focus();
+    handlers.onHandoff?.(hostedUrl);
+    return { hostedUrl, window: win };
+  }
+
+  handlers.onError?.(new Error("Paystack checkout could not be opened."));
+  return null;
+}
+
+/**
+ * Open the hosted Paystack checkout in a new tab and return its URL.
+ *
+ * The host app is never navigated or overlaid, so checkout can never render a
+ * blank white screen. Suitable for driving the in-app PaymentModal.
+ *
+ * @param {object} init - { reference, authorizationUrl }
+ * @returns {string|null} hosted checkout URL
+ */
+export function openHostedCheckout(init = {}) {
+  const url = init.authorizationUrl || (init.reference && `https://checkout.paystack.com/${init.reference}`);
+  if (!url) return null;
+  const win = window.open(url, "_blank", "noopener,noreferrer");
+  if (win) win.focus();
+  return url;
+}
+
+/** Load the Paystack inline JS SDK on demand. */
+export function loadPaystackScript() {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined") return resolve(false);
+    if (window.PaystackPop) return resolve(true);
+    const s = document.createElement("script");
+    s.src = "https://js.paystack.co/v1/inline.js";
+    s.async = true;
+    s.onload = () => resolve(true);
+    s.onerror = () => resolve(false);
+    document.head.appendChild(s);
+  });
+}
