@@ -13,7 +13,7 @@ COPY package*.json ./
 RUN npm ci --no-audit --no-fund
 
 # Copy sources
-COPY index.html vite.config.ts tsconfig.json ./
+COPY index.html vite.config.js ./
 COPY src/ ./src/
 
 # Vite reads env vars at build time. Passed in via docker-compose build args.
