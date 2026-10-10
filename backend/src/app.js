@@ -53,14 +53,27 @@ app.use(
   }),
 );
 
-// CORS — restrict to configured frontend origin(s)
-const allowedOrigins = [config.frontendUrl, ...config.extraOrigins];
+// CORS — restrict to configured frontend origin(s).
+// Entries may be exact origins (https://app.example.com) or glob patterns
+// with `*` (https://*.example.com), useful for ephemeral preview deploys such
+// as Netlify's `<deploy-id>--site.netlify.app` URLs.
+const escapeRegExp = (str) => str.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+const originToRegex = (pattern) =>
+  new RegExp(`^${pattern.split('*').map(escapeRegExp).join('.*')}$`);
+
+const allowedOriginPatterns = [config.frontendUrl, ...config.extraOrigins].map(
+  originToRegex,
+);
+
+const isOriginAllowed = (origin) =>
+  allowedOriginPatterns.some((regex) => regex.test(origin));
+
 app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (mobile apps, curl, server-to-server)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
+      if (isOriginAllowed(origin)) return callback(null, true);
       logger.warn('CORS request blocked', { origin });
       return callback(new Error('Not allowed by CORS'));
     },
