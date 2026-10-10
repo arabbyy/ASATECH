@@ -53,7 +53,7 @@ tmp/
 .cache/
 
 # MongoDB
-data/
+# data/
 *.lock
 
 # OS
